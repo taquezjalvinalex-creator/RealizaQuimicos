@@ -4,14 +4,14 @@ import '../../style/styles.dart';
 
 class AddVisitBottomSheet extends StatefulWidget {
   final int clientId;
-  final int sellerId;
-  final int routeId;
+  //final int sellerId;
+  //final int routeId;
 
   const AddVisitBottomSheet({
     super.key,
     required this.clientId,
-    required this.sellerId,
-    required this.routeId,
+    //required this.sellerId,
+    //required this.routeId,
   });
 
   @override
@@ -32,7 +32,7 @@ class _AddVisitBottomSheetState extends State<AddVisitBottomSheet> {
   void _confirmVisit() {
     // ✅ Se accede a las variables del widget usando 'widget.'
     visitDao.registrarVisita(
-      routeId: widget.routeId,
+      //routeId: widget.routeId,
       clientId: widget.clientId,
       status: _selectedOption, // Usa el status seleccionado
       // Usa el texto del controlador si no está vacío, si no, usa el texto por defecto

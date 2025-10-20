@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_uno/controllers/product_dao.dart';
+import 'package:proyecto_uno/controllers/sale_dao.dart';
+import 'package:proyecto_uno/models/item_model.dart';
 import 'package:proyecto_uno/models/product_model.dart';
+import 'package:proyecto_uno/models/sale_model.dart';
+import '../../controllers/credit_dao.dart';
 import '../../style/styles.dart';
 
 class AddProductBottomSheet extends StatefulWidget {
@@ -18,6 +22,8 @@ class AddProductBottomSheet extends StatefulWidget {
 }
 
 class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
+  final saleDao = SaleDao();
+  final creditDao = CreditDao();
   final TextEditingController _searchController = TextEditingController();
   List<ProductModel> _allProducts = [];
   List<ProductModel> _filteredProducts = [];
@@ -67,7 +73,9 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
   // Aumenta la cantidad seleccionada
   void _increaseQuantity(ProductModel product) {
     setState(() {
+      print('quantities before $_quantities');
       _quantities[product.productId] = (_quantities[product.productId] ?? 0) + 1;
+      print('quantities after $_quantities');
       // Limpiar el texto de la barra de busquda
       _searchController.clear();
       //Quitar la lista de productos filtrados
@@ -90,12 +98,13 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
   }
 // Actualiza la lista de productos seleccionados con la cantidad seleccionada
   void _updateSelectedProducts() {
+    print('UPDATE SELECTED PRODUCTS $_selectedProducts');
     _selectedProducts = _allProducts
         .where((p) => (_quantities[p.productId] ?? 0) > 0)
         .toList();
   }
-// COnfirma el pedido
-  void _confirmProducts() { //1=compra, 2=credito 3=pedido
+// Confirma el pedido
+  void _confirmProducts() {
     //
     if (_selectedProducts.isEmpty) {
       return;
@@ -105,18 +114,18 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
   }
 
   // Confirma el credito
-  void _confirmCredit() { //1=compra, 2=credito 3=pedido
-    //
+  void _confirmCredit() {
     if (_selectedProducts.isEmpty) {
       return;
     }
     // Dialogo de confirmación
+    print('>>>>> SHOW');
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Productos a crédito'),
         content: Text(
-          '¿Deseas registrar un crédito por \$${_totalPrice} '
+          '¿Deseas registrar un crédito por \$$_totalPrice '
               'a ${widget.clientName}',
         ),
         actions: [
@@ -126,22 +135,78 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
           ),
           ElevatedButton(
             onPressed: () async {
-
-              //await _savePayment();
-
-              if (context.mounted) {
-                Navigator.of(context).pop(); // cerrar diálogo
-                Navigator.of(context).pop(true);
+              await _saveCredit();
+              // ✅ 3. Cierra el diálogo y el BottomSheet en la secuencia correcta.
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop(); // Primero, cierra el diálogo.
+                //Navigator.of(context).pop(true);
               }
+              if (mounted) {
+                Navigator.of(context).pop(true); // Segundo, cierra el BottomSheet.
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Crédito registrado correctamente.'),
+                    backgroundColor: Colors.green, // Un color más apropiado para éxito
+                  ),
+                );
+              }
+
             },
             child: const Text('Confirmar'),
           ),
         ],
       ),
     );
-    // Aquí puedes navegar o devolver los productos seleccionados
-    Navigator.pop(context, _selectedProducts);
   }
+
+  Future<void> _saveCredit() async{
+    print(">>>> SAVE");
+    double surcharges = 0.0;
+    for (var product in _selectedProducts) {
+      final quantity = _quantities[product.productId] ?? 0;
+      surcharges += product.surcharge * quantity;
+    }
+
+    List<ItemModel> items = _itemsModel();
+    //INSERTAR VENTA
+    SaleModel sale = await saleDao.insertSale(
+      clientId: widget.clientId,
+      paymentType: 0,
+      status: 'PENDIENTE_PAGO',
+      totalPrice: _totalPrice,
+      totalSurcharge: surcharges,
+      orderId: null,
+      items: items,
+    );
+    //INSERTAR CRÉDITO
+    await creditDao.insertCredit(sale);
+  }
+
+  //CREAR LISTA DE ITEMMODEL
+  List<ItemModel> _itemsModel() {
+    // Si no hay productos seleccionados, devuelve una lista vacía.
+    if (_selectedProducts.isEmpty) {
+      return [];
+    }
+
+    return _selectedProducts.map((product) {
+      // Obtiene la cantidad para el producto actual.
+      final int quantity = _quantities[product.productId] ?? 0;
+
+      // Crea y devuelve un objeto ItemModel para este producto.
+      return ItemModel(
+        itemId: null, // Autoincremental en la DB
+        saleId: null, // Se asignará después de crear la venta
+        productId: product.productId,
+        quantity: quantity,
+        unitPrice: product.unitPrice,
+        surcharge: product.surcharge,
+        totalPrice: product.unitPrice * quantity,
+        totalSurcharge: product.surcharge * quantity,
+      );
+    }).toList(); // Convierte el resultado de .map en una List<ItemModel>
+  }
+
 
   // Función para calcular el valor total del carrito
   double _calculateTotal() {
@@ -153,7 +218,17 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
     }
     return total;
   }
-
+  // Función para calcular el valor total del RECARGO
+  /*
+  double _calculateSurcharge() {
+    double total = 0.0;
+    for (var product in _selectedProducts) {
+      final quantity = _quantities[product.productId] ?? 0;
+      total += product.surcharge * quantity;
+      _totalSurcharge = total;
+    }
+    return total;
+  }*/
   @override
   void dispose() {
     _searchController.dispose();
@@ -222,26 +297,7 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
 
             // LISTA DE PRODUCTOS SELECCIONADOS
             if (_selectedProducts.isNotEmpty) ...[
-              /*
-              const Divider(thickness: 1),
-              const Text(
-                "Productos seleccionados:",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              Column(
-                children: _selectedProducts.map((p) {
-                  final q = _quantities[p.productId] ?? 0;
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(child: Text(p.name)),
-                      Text("x$q"),
-                      Text("\$${(p.unitPrice * q).toStringAsFixed(2)}"),
-                    ],
-                  );
-                }).toList(),
-              ),*/
+
               // LISTA DE PRODUCTOS SELECCIONADOS
               FutureBuilder<List<ProductModel>>(
                 future: ProductDao().getProducts(),
@@ -302,10 +358,7 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
                 }
                 if (snapshot.hasError) {
                   return const Text('Error al cargar productos');
-                }/* Mensaje cuando la barra de busqueda no tiene texto
-                if (_filteredProducts.isEmpty) {
-                  return const Text('No se encontraron productos');
-                }*/
+                }
 
                 return ListView.builder(
                   shrinkWrap: true,
@@ -389,7 +442,7 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
                 Expanded(
                   child: ElevatedButton(
                     style: AppButtonStyles.secondaryButton,
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _confirmCredit,
                     child: const Text("Crédito"),
                   ),
                 ),

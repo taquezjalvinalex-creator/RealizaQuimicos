@@ -1,7 +1,10 @@
+import 'package:proyecto_uno/models/sale_model.dart';
+
 import '../database/database.dart';
 import '../models/credit_model.dart';
+import 'package:intl/intl.dart'; //Formato de fecha
 
-class CreditsDao {
+class CreditDao {
   final dbHelper = DBRealezaQuimicos.instance;
 
   Future<List<CreditModel>> getAllCredits() async {
@@ -19,9 +22,9 @@ class CreditsDao {
 
     final db = await dbHelper.database;
     // Fecha actual en formato compatible con SQLite
+    final String dateToday = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
     final today = DateTime.now();
-    //final todayDate = DateTime.parse(today);
-    //final todayStr = DateTime.now().toIso8601String();//DateFormat('yyyy-MM-dd').format(today);
+    //final today = DateTime.now().toIso8601String();//DateFormat('yyyy-MM-dd').format(today);
 
     // 1️⃣ Obtener todos los créditos activos
    /* final List<CreditModel> activeCredits = await db.query(
@@ -33,7 +36,6 @@ class CreditsDao {
 
     for (var credit in activeCredits) {
       // ✅ Accede a las propiedades del modelo directamente.
-      // Asegúrate de que tu CreditModel tenga una propiedad 'startDate' de tipo DateTime.
       final DateTime startDate = DateTime.parse(credit.startDate);
       final int daysPassed = today.difference(startDate).inDays;
 
@@ -65,19 +67,24 @@ class CreditsDao {
   }
 
   // Guardar un nuevo crédito
-  Future<void> insertCredit(CreditModel credit) async {
+  Future<void> insertCredit(SaleModel sale) async {
     final db = await dbHelper.database;
 
-    // 1. Crear la tabla de ventas con el nuevo crédito payment_type = 0
-      //Pasar product_model y sale_model a la tabla de ventas
-    /*
-    int saleId = await saleDao.insertSale(
-      productModel: productModel,
-      saleModel: saleModel,
-    );*/
-
-    // 2. Insertar el crédito en la tabla credits
-
-
+    // 1. Insertar el crédito en la tabla credits
+    await db.insert(
+      'credits', // Nombre de la tabla
+      {
+        'sale_id': sale.saleId,
+        'client_id': sale.clientId,
+        'seller_id': sale.sellerId,
+        'total_amount': sale.totalPrice,
+        'total_surcharge': sale.totalSurcharge,
+        'outstanding_balance': sale.totalPrice,
+        'start_date': sale.saleDate,
+        'due_date': null,
+        'status': 1, // Estado inicial del crédito
+        'observations': '',
+      },
+    );
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../controllers/payment_dao.dart';
 import '../../models/payment_model.dart';
 import '../../style/styles.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart'; //Formato de fecha
 
 class AddPaymentBottomSheet extends StatefulWidget {
   final int clientId; // ID del cliente para registrar el abono

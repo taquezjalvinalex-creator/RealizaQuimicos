@@ -205,8 +205,8 @@ class _ClientPageState extends State<ClientPage> {
                                 builder: (BuildContext context) {
                                   return AddVisitBottomSheet(
                                       clientId: client.clientId,
-                                      sellerId: client.clientId,
-                                      routeId: client.routeId
+                                      //sellerId: client.clientId,
+                                      //routeId: client.routeId
                                   );
                                 },
                               );
@@ -293,9 +293,9 @@ class _ClientPageState extends State<ClientPage> {
                           ),
                           ElevatedButton(
                             style: AppButtonStyles.primaryButton,
-                            onPressed: () {
+                            onPressed: () async{
                               // Abrir BottomSheet
-                              showModalBottomSheet(
+                              final result = await showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true, // permite que suba al escribir en inputs
                                 shape: const RoundedRectangleBorder(
@@ -309,6 +309,10 @@ class _ClientPageState extends State<ClientPage> {
                                   );
                                 },
                               );
+                              // SI EL RESULTADO ES 'true', RECARGA LA LISTA
+                              if (result == true) {
+                                _loadClients();
+                              }
                             },
                             child: const Text("Agregar Producto"),
                           ),

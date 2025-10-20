@@ -41,4 +41,21 @@ class CreditModel {
       observations: map['observations'] ?? '',
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'credit_id': creditId, // Si es null, sqflite lo ignora y autoincrementa
+      'sale_id': saleId,
+      'client_id': clientId,
+      'seller_id': sellerId,
+      'total_amount': totalAmount,
+      'total_surcharge': totalSurcharge,
+      'outstanding_balance': outstandingBalance,
+      'start_date': startDate,
+      'due_date': dueDate,
+      'status': status,
+      'observations': observations,
+      //'created_at'
+    };
+  }
 }

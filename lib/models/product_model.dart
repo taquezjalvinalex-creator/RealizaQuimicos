@@ -4,7 +4,7 @@ class ProductModel {
   final String code;
   final String description;
   final double unitPrice;
-  final double? surcharge;
+  final double surcharge;
   final int minimumStock;
   final String unitMeasure;
   final int categoryID;

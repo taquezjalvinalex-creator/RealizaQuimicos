@@ -21,7 +21,7 @@ class _LoadingPageState extends State<LoadingPage> {
   void _startLoading() async {
     // QUI SE CARGAN CONFIGURACIONES Y DATOS INICIALES
 
-    final creditController = CreditsDao();
+    final creditController = CreditDao();
     await creditController.applySurchargesIfNeeded();
 
     Timer(const Duration(seconds: 2), () {

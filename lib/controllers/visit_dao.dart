@@ -1,21 +1,23 @@
 import 'package:proyecto_uno/database/database.dart';
 import '../utils/session_manager.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:intl/intl.dart'; //Formato de fecha
 
 class VisitDao {
   final dbHelper = DBRealezaQuimicos.instance;
 
   /// Registra una visita de cliente y aplica las validaciones del flujo
-  Future<void> registrarVisita({
-    required int routeId,
+  Future<int> registrarVisita({
+    //required int routeId,
     required int clientId,
     required int status,
     String? observations,
   }) async {
     final db = await dbHelper.database;
+    int todaysVisitId = 0;
 
     await db.transaction((txn) async {
-      String dateToday = DateTime.now().toIso8601String();
+      final String dateToday = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
       // Obtener el vendedor asociado a la ruta
       final userId = await SessionManager.getUserId();
@@ -26,15 +28,22 @@ class VisitDao {
       );
       int sellerId = sellerLogged.first['seller_id'] as int;
 
-      // 1️⃣ Verificar si hay un route_log activo (status = 1)
+      // Obtener la ruta asociada al cliente
+      final List<Map<String, dynamic>> routeClient = await txn.query(
+        'clients',
+        where: 'client_id = ? ',
+        whereArgs: [clientId],
+      );
+      int routeId = routeClient.first['route_id'] as int;
 
+      // 1️⃣ Verificar si hay un route_log activo (status = 1)
       final List<Map<String, dynamic>> activeLogs = await txn.query(
         'route_log',
         where: 'route_id = ? AND status = 1',
         whereArgs: [routeId],
       );
 
-      int logId;
+      int logId; // Id del log
       if (activeLogs.isEmpty) {
         // Crear un nuevo log si no existe uno activo
         logId = await txn.insert('route_log', {
@@ -48,9 +57,6 @@ class VisitDao {
         logId = activeLogs.first['log_id'] as int;
       }
 
-      //Future<int> futureLogId= insertRouteLog(routeId);
-      //int logId = await futureLogId;
-
       // Verificar si hay un registro de visita de cliente en la misma fecha
       final List<Map<String, dynamic>> visitedClient = await txn.query(
         'client_visits',
@@ -58,10 +64,10 @@ class VisitDao {
         whereArgs: [dateToday, clientId],
       );
 
-      int visitId;
+      int visitId; // obtener el id de visit_today
       if(visitedClient.isEmpty){
         // 2️⃣ Insertar registro en client_visits
-        await txn.insert('client_visits', {
+        todaysVisitId = await txn.insert('client_visits', {
           'log_id': logId,
           'client_id': clientId,
           'seller_id': sellerId,
@@ -79,7 +85,8 @@ class VisitDao {
 
       } else {
         visitId = visitedClient.first['visit_id'] as int;
-        // Actualizar registro de visita existente
+        todaysVisitId = visitId;
+        // Actualizar registro de STATUS en client_visits
         await txn.rawUpdate('''
         UPDATE client_visits
         SET status = ?
@@ -106,13 +113,15 @@ class VisitDao {
           'route_log',
           {
             'status': 0,
-            'end_date': DateTime.now().toIso8601String(),
-            'observations': 'Ruta finalizada automáticamente.',
+            'end_date': dateToday,
+            'observations': 'Ruta finalizada con todos los clientes visitados.',
           },
           where: 'log_id = ?',
           whereArgs: [logId],
         );
       }
     });
+    print('>>>>>ID DE LA VISITA >>>>>> $todaysVisitId');
+    return todaysVisitId;
   }
 }

@@ -151,7 +151,6 @@ class PaymentDao {
 
       // 5. REGISTRAR LA VISITA DEL CLIENTE|
       VisitDao().registrarVisita(
-        routeId: routeId,
         clientId: clientId,
         status: 3,
         observations: 'Se registró un abono de \$${payment.amount}',
