@@ -117,7 +117,7 @@ class RouteDao {
         FROM routes r
         JOIN seller_routes sr ON sr.route_id = r.route_id
         JOIN sellers s ON s.seller_id = sr.seller_id
-        LEFT JOIN route_log rl ON rl.route_id=r.route_id AND rl.status=1
+        LEFT JOIN route_log rl ON rl.route_id=r.route_id AND date(rl.start_date) = date('now','localtime') 
         LEFT JOIN sales_ vc ON vc.route_id = r.route_id AND vc.seller_id = s.seller_id
         LEFT JOIN payments_ pc  ON pc.route_id = r.route_id AND pc.seller_id = s.seller_id
         LEFT JOIN clients_ nc ON nc.route_id =  r.route_id
@@ -125,7 +125,7 @@ class RouteDao {
         WHERE us.user_id = ?
         ORDER BY r.route_day;
     ''', [userId]); //
-    //print(result);
+    print(result);
     return result.map((row) => RouteModel.fromMap(row)).toList();
   }
 

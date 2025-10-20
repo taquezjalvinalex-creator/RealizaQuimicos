@@ -91,6 +91,7 @@ class PaymentDao {
             whereArgs: [credit.creditId],
           );
           // Se registra el pago en la base de datos.
+          print("Abono aplicado con defla ${payment.paymentDate}");
           await txn.insert('payments',{
 
             'credit_id': credit.creditId,
@@ -124,6 +125,7 @@ class PaymentDao {
           );
 
           // Se registra el pago en la base de datos.
+          print("Abono aplicado con defla ${payment.paymentDate}");
           await txn.insert('payments',{
 
             'credit_id': credit.creditId,

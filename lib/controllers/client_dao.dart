@@ -54,6 +54,7 @@ class ClientDao {
   // Consulta el resumen de clientes por ruta
   Future<List<ClientModel>> getClientByRoute(int routeId) async {
     //final userId = await SessionManager.getUserId();
+    getPayments();
     final db = await dbHelper.database;
     // Consulta personalizada para obtener el resumen de rutas
     final result = await db.rawQuery('''
@@ -63,18 +64,21 @@ class ClientDao {
              cr.client_id,
              SUM(cr.outstanding_balance) AS total_creditos
           FROM credits cr
+          WHERE cr.status = 1
           GROUP BY cr.client_id
       ),
       pagos_hoy AS (
-          SELECT 
-              sl.client_id,
-              SUM(p.amount_paid) AS pagos_credito_hoy
-          FROM payments p
-          JOIN sales sl ON sl.sale_id = p.sale_id
-          JOIN credits c ON p.credit_id = c.credit_id
-          WHERE p.credit_id IS NOT NULL
-            AND date(p.payment_date) = date('now','localtime')
-          GROUP BY sl.client_id
+        SELECT c.client_id,
+        SUM(p.amount_paid) AS pagos_credito_hoy
+        FROM payments p
+        JOIN credits c ON p.credit_id = c.credit_id
+        WHERE p.credit_id IS NOT NULL
+        AND date(p.payment_date) = date('now','localtime')
+        GROUP BY c.client_id
+      ),
+      visitas_hoy AS (
+         SELECT cv.client_id, cv.status FROM client_visits cv
+         WHERE date(cv.visit_date) = date('now','localtime')
       )
       SELECT 
           cl.client_id,
@@ -87,12 +91,13 @@ class ClientDao {
           cl.phone,
           cl.home_photo_url,
           cl.reference_description,
-          cv.status,
+          COALESCE(vh.status, 0) AS status,
           COALESCE(crs.total_creditos, 0) AS credits,
           COALESCE(ph.pagos_credito_hoy, 0) AS payments,
           strftime('%d/%m/%Y', MAX(cv.visit_date)) AS last_visit
       FROM clients cl
       LEFT JOIN client_visits cv ON cv.client_id = cl.client_id
+      LEFT JOIN visitas_hoy vh ON vh.client_id=cl.client_id
       LEFT JOIN creditos crs ON crs.client_id=cl.client_id
       LEFT JOIN pagos_hoy ph ON cl.client_id = ph.client_id
       WHERE cl.route_id = ?
@@ -112,18 +117,21 @@ class ClientDao {
              cr.client_id,
              SUM(cr.outstanding_balance) AS total_creditos
           FROM credits cr
+          WHERE cr.status = 1
           GROUP BY cr.client_id
       ),
       pagos_hoy AS (
-          SELECT 
-              sl.client_id,
-              SUM(p.amount_paid) AS pagos_credito_hoy
-          FROM payments p
-          JOIN sales sl ON sl.sale_id = p.sale_id
-          JOIN credits c ON p.credit_id = c.credit_id
-          WHERE p.credit_id IS NOT NULL
-            AND date(p.payment_date) = date('now','localtime')
-          GROUP BY sl.client_id
+        SELECT c.client_id,
+        SUM(p.amount_paid) AS pagos_credito_hoy
+        FROM payments p
+        JOIN credits c ON p.credit_id = c.credit_id
+        WHERE p.credit_id IS NOT NULL
+        AND date(p.payment_date) = date('now','localtime')
+        GROUP BY c.client_id
+      ),
+      visitas_hoy AS (
+         SELECT cv.client_id, cv.status FROM client_visits cv
+         WHERE date(cv.visit_date) = date('now','localtime')
       )
       SELECT 
           cl.client_id,
@@ -136,12 +144,13 @@ class ClientDao {
           cl.phone,
           cl.home_photo_url,
           cl.reference_description,
-          cv.status,
+          COALESCE(vh.status, 0) AS status,
           COALESCE(crs.total_creditos, 0) AS credits,
           COALESCE(ph.pagos_credito_hoy, 0) AS payments,
           strftime('%d/%m/%Y', MAX(cv.visit_date)) AS last_visit
       FROM clients cl
       LEFT JOIN client_visits cv ON cv.client_id = cl.client_id
+      LEFT JOIN visitas_hoy vh ON vh.client_id=cl.client_id
       LEFT JOIN creditos crs ON crs.client_id=cl.client_id
       LEFT JOIN pagos_hoy ph ON cl.client_id = ph.client_id
       GROUP BY cl.client_id;
@@ -187,5 +196,53 @@ class ClientDao {
 
     // 4️⃣ Combinar los datos
     return client.copyWith(payments: payments, visits: visits);
+  }
+
+
+  // Obtener todos los pagos
+  Future<void> getPayments() async {
+    getPaymentsData();
+    getPaymentsData2();
+    final db = await dbHelper.database;
+    final pagos = await db.query('payments ORDER BY payment_id DESC');
+    //final pagos = await db.query('payments');
+    print('>>>>>>>>>>>>>>>>> PAGOS <<<<<<<<<<<<<<<<<<');
+    print(pagos);
+    print('>>>>>>>>>>>>>>>>> END PAGOS <<<<<<<<<<<<<<<<<<');
+  }
+
+  // Obtener todos los pagos
+  Future<void> getPaymentsData() async {
+    final db = await dbHelper.database;
+    final pagos = await db.rawQuery('''
+        SELECT c.client_id,
+        SUM(p.amount_paid) AS pagos_credito_hoy
+        FROM payments p
+        JOIN credits c ON p.credit_id = c.credit_id
+        WHERE p.credit_id IS NOT NULL
+        AND date(p.payment_date) = date('now','localtime')
+        GROUP BY c.client_id
+        ''');
+    //final pagos = await db.rawQuery('payments');
+    print('>>>>>>>>>>>>>>>>> Date <<<<<<<<<<<<<<<<<<');
+    print(pagos);
+    print('>>>>>>>>>>>>>>>>> END Date <<<<<<<<<<<<<<<<<<');
+  }
+
+  Future<void> getPaymentsData2() async {
+    final db = await dbHelper.database;
+    final pagos = await db.rawQuery('''
+        SELECT
+        c.client_id,
+        SUM(p.amount_paid) AS pagos_credito_hoy
+        FROM payments p
+        JOIN credits c ON p.credit_id = c.credit_id
+        WHERE p.credit_id IS NOT NULL
+        GROUP BY c.client_id
+        ''');
+    //final pagos = await db.query('payments');
+    print('>>>>>>>>>>>>>>>>> Date 2<<<<<<<<<<<<<<<<<<');
+    print(pagos);
+    print('>>>>>>>>>>>>>>>>> END Date 2 <<<<<<<<<<<<<<<<<<');
   }
 }

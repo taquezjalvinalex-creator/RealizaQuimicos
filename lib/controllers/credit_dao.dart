@@ -63,4 +63,21 @@ class CreditsDao {
       }
     }
   }
+
+  // Guardar un nuevo crédito
+  Future<void> insertCredit(CreditModel credit) async {
+    final db = await dbHelper.database;
+
+    // 1. Crear la tabla de ventas con el nuevo crédito payment_type = 0
+      //Pasar product_model y sale_model a la tabla de ventas
+    /*
+    int saleId = await saleDao.insertSale(
+      productModel: productModel,
+      saleModel: saleModel,
+    );*/
+
+    // 2. Insertar el crédito en la tabla credits
+
+
+  }
 }

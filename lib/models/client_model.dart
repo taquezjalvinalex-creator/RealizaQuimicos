@@ -9,7 +9,7 @@ class ClientModel {
   final String phone;
   final String homePhoto;
   final String referenceDescription;
-  final String visits;
+  final String lastVisits;
   final int status;
   final double credits;
   final double payments;
@@ -25,7 +25,7 @@ class ClientModel {
     required this.phone,
     required this.homePhoto,
     required this.referenceDescription,
-    required this.visits,
+    required this.lastVisits,
     required this.status,
     required this.credits, //Suma de balance
     required this.payments,
@@ -45,7 +45,7 @@ class ClientModel {
       homePhoto: map['home_photo_url'] ?? '',
       referenceDescription: map['reference_description'] ?? '',
       status: map['status'] ?? 0,
-      visits: (map['last_visit'] ?? ''),
+      lastVisits: (map['last_visit'] ?? ''),
       credits: (map['credits'] ?? 0).toDouble(),
       payments: (map['payments'] ?? 0).toDouble(),
     );

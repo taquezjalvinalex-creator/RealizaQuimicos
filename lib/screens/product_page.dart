@@ -99,7 +99,7 @@ class _ProductPageState extends State<ProductPage> {
                           debugPrint("Monto digitado: $monto");
                           debugPrint("Total calculado: $total");
 
-                          if (monto < total) {
+                          if (monto < total) {     if (monto < total) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("El monto es menor al total de la compra")),
                             );

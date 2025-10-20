@@ -30,26 +30,36 @@ class AppTextStyles {
   );
 
   static const cursive = TextStyle(
+    fontFamily: 'Roboto',
     fontSize: 16,
     fontWeight: FontWeight.bold, //negrita
     color: AppColors.primary,
   );
 
   static const boldSuccess = TextStyle(
+    fontFamily: 'Roboto',
     fontSize: 16,
     fontWeight: FontWeight.bold, //negrita
     color: AppColors.successColor,
   );
 
   static const boldInfo = TextStyle(
+    fontFamily: 'Roboto',
     fontSize: 16,
     fontWeight: FontWeight.bold, //negrita
     color: AppColors.infoColor,
   );
 
   static const textGrey = TextStyle(
+    fontFamily: 'Roboto',
     fontSize: 14,
     color: AppColors.greyLight,
+  );
+
+  static const myText = TextStyle(
+    fontFamily: 'Roboto',
+    fontSize: 16,
+    color: AppColors.primary,
   );
 
   static const textButton = TextStyle(

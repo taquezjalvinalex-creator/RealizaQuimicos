@@ -7,6 +7,7 @@ import 'package:proyecto_uno/style/styles.dart';
 import '../controllers/route_dao.dart';
 import '../routes/app_routes.dart';
 import 'bottom_sheets/add_payment_bottomsheet.dart';
+
 //import '../widgets/app_drawer.dart';
 
 class ClientPage extends StatefulWidget {
@@ -24,6 +25,7 @@ class _ClientPageState extends State<ClientPage> {
   final routeDao = RouteDao();
   late Future <String> _routeNameFuture;
   late Future<List<ClientModel>> _clientsFuture;
+  late Future <String> _statusFuture;
 
   @override
   void initState() {
@@ -44,7 +46,6 @@ class _ClientPageState extends State<ClientPage> {
       }
     });
   }
-
 
     String _getStatusText(int status) {
     switch (status) {
@@ -165,7 +166,7 @@ class _ClientPageState extends State<ClientPage> {
 
                           const Icon(Icons.calendar_month_outlined, size: 16, color: AppColors.greyLight),
                           const SizedBox(width: 4),
-                          Text(client.visits)
+                          Text(client.lastVisits)
                         ],
                       ),
                       //const SizedBox(height: 5),
@@ -301,7 +302,11 @@ class _ClientPageState extends State<ClientPage> {
                                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                                 ),
                                 builder: (BuildContext context) {
-                                  return AddProductBottomSheet(clientId: client.clientId);
+                                  String clientName = "${client.firstName} ${client.lastName}";
+                                  return AddProductBottomSheet(
+                                      clientId: client.clientId,
+                                      clientName: clientName,
+                                  );
                                 },
                               );
                             },

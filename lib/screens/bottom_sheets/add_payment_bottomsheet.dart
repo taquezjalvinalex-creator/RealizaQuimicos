@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../controllers/payment_dao.dart';
 import '../../models/payment_model.dart';
 import '../../style/styles.dart';
+import 'package:intl/intl.dart';
 
 class AddPaymentBottomSheet extends StatefulWidget {
   final int clientId; // ID del cliente para registrar el abono
@@ -41,7 +42,7 @@ class _AddPaymentBottomSheetState extends State<AddPaymentBottomSheet> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    // Dialogo de confiormación
+    // Dialogo de confirmación
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -75,6 +76,10 @@ class _AddPaymentBottomSheetState extends State<AddPaymentBottomSheet> {
   // Funcion para guardar el abono
   Future<void> _savePayment() async {
 
+    // Formatea la fecha y hora actual
+    final String formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+
+
     final double amount = double.parse(_amountController.text);
     final String observation = _observationController.text;
     final int paymentMethod = _selectedOption;
@@ -93,7 +98,7 @@ class _AddPaymentBottomSheetState extends State<AddPaymentBottomSheet> {
       observation: observation,
       methodId: paymentMethod,
       receipt: null, // De momento no tienes la foto, se deja en null
-      paymentDate: DateTime.now().toIso8601String(), // Guarda la fecha y hora actual
+      paymentDate: formattedDate, // Guarda la fecha y hora actual
     );
 
     // Usa el DAO para insertar en la base de datos
