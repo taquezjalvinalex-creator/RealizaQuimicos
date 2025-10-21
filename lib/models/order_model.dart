@@ -1,15 +1,17 @@
 class OrderModel {
-  final int orderId;
+  final int? orderId;
   final int clientId;
-  final String clientName;
-  final String clientLastName;
+  final String? clientName;
+  final String? clientLastName;
   final int sellerId;
-  final String sellerName;
-  final String sellerLastName;
+  final String? sellerName;
+  final String? sellerLastName;
   final String status;
   final String orderDate;
   final int quantity;
   final double totalPrice;
+  final double totalSurcharge;
+  final String observations;
 
   OrderModel({
     required this.orderId,
@@ -23,12 +25,14 @@ class OrderModel {
     required this.orderDate,
     required this.quantity,
     required this.totalPrice,
+    required this.totalSurcharge,
+    required this.observations,
   });
 
   // Convertir desde Map (resultado de SQLite) a OrderModel
   factory OrderModel.fromMap(Map<String, dynamic> map) {
     return OrderModel(
-      orderId: map['client_id'] ?? 0,
+      orderId: map['order_id'] ?? 0,
       clientId: map['client_id'] ?? 0,
       clientName: map['client_name'] ?? '',
       clientLastName: map['client_last_name'] ?? '',
@@ -39,6 +43,8 @@ class OrderModel {
       orderDate: map['order_date'] ?? '',
       quantity: (map['total_quantity'] ?? 0),
       totalPrice: (map['total_price'] ?? 0).toDouble(),
+      totalSurcharge: (map['total_surcharge'] ?? 0).toDouble(),
+      observations: map['observations'] ?? '',
     );
   }
 }

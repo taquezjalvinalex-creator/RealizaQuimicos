@@ -5,6 +5,7 @@ import 'package:proyecto_uno/models/item_model.dart';
 import 'package:proyecto_uno/models/product_model.dart';
 import 'package:proyecto_uno/models/sale_model.dart';
 import '../../controllers/credit_dao.dart';
+import '../../controllers/order_dao.dart';
 import '../../style/styles.dart';
 
 class AddProductBottomSheet extends StatefulWidget {
@@ -24,20 +25,17 @@ class AddProductBottomSheet extends StatefulWidget {
 class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
   final saleDao = SaleDao();
   final creditDao = CreditDao();
+  final orderDao = OrderDao();
   final TextEditingController _searchController = TextEditingController();
   List<ProductModel> _allProducts = [];
   List<ProductModel> _filteredProducts = [];
   final Map<int, int> _quantities = {}; // {productId: quantity}
   List<ProductModel> _selectedProducts = [];
   double _totalPrice = 0.0;
-  //final TextEditingController _amountController = TextEditingController();
-
 
   @override
   void initState() {
     super.initState();
-    // Cuando el widget se inicie, la lista filtrada es igual a la lista completa
-    // _filteredProducts = _allProducts;
 
     _loadProducts();
     // ✅ 2. Añade un listener para reaccionar a los cambios de texto
@@ -48,7 +46,6 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
     final products = await ProductDao().getProducts();
     setState(() {
       _allProducts = products;
-      // _filteredProducts = products;
     });
   }
   //
@@ -119,7 +116,6 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
       return;
     }
     // Dialogo de confirmación
-    print('>>>>> SHOW');
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -159,14 +155,57 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
     );
   }
 
+  // Confirma el Pedido
+  void _confirmOrder() {
+    if (_selectedProducts.isEmpty) {
+      return;
+    }
+    // Dialogo de confirmación
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Pedido'),
+        content: Text(
+          '¿Deseas registrar un pedido por \$$_totalPrice '
+              'a ${widget.clientName}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await _saveOrder();
+              // ✅ 3. Cierra el diálogo y el BottomSheet en la secuencia correcta.
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop(); // Primero, cierra el diálogo.
+                //Navigator.of(context).pop(true);
+              }
+              if (mounted) {
+                Navigator.of(context).pop(true); // Segundo, cierra el BottomSheet.
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Pedido registrado correctamente.'),
+                    backgroundColor: Colors.green, // Un color más apropiado para éxito
+                  ),
+                );
+              }
+
+            },
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+  //Guardar crédito
   Future<void> _saveCredit() async{
-    print(">>>> SAVE");
     double surcharges = 0.0;
     for (var product in _selectedProducts) {
       final quantity = _quantities[product.productId] ?? 0;
       surcharges += product.surcharge * quantity;
     }
-
     List<ItemModel> items = _itemsModel();
     //INSERTAR VENTA
     SaleModel sale = await saleDao.insertSale(
@@ -181,8 +220,28 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
     //INSERTAR CRÉDITO
     await creditDao.insertCredit(sale);
   }
+  //Guardar Pedido
+  Future<void> _saveOrder() async{
 
-  //CREAR LISTA DE ITEMMODEL
+    int totalQuantity = 0;
+    double surcharges = 0.0;
+    for (var product in _selectedProducts) {
+      final quantity = _quantities[product.productId] ?? 0;
+      totalQuantity += quantity;
+      surcharges += product.surcharge * quantity;
+    }
+
+    List<ItemModel> items = _itemsModel();
+    //INSERTAR ORDEN
+    await orderDao.insertOrder(
+      clientId: widget.clientId,
+      totalQuantity: totalQuantity,
+      totalPrice: _totalPrice,
+      totalSurcharge: surcharges,
+      items: items,
+    );
+  }
+  //CREAR LISTA DE ITEM_MODEL
   List<ItemModel> _itemsModel() {
     // Si no hay productos seleccionados, devuelve una lista vacía.
     if (_selectedProducts.isEmpty) {
@@ -218,17 +277,7 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
     }
     return total;
   }
-  // Función para calcular el valor total del RECARGO
-  /*
-  double _calculateSurcharge() {
-    double total = 0.0;
-    for (var product in _selectedProducts) {
-      final quantity = _quantities[product.productId] ?? 0;
-      total += product.surcharge * quantity;
-      _totalSurcharge = total;
-    }
-    return total;
-  }*/
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -289,10 +338,6 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
               ),
-              //onChanged: (value) {
-              //   // Aquí irá la lógica para filtrar la lista de productos
-              //   _filterProducts(value);
-              //},
             ),
 
             // LISTA DE PRODUCTOS SELECCIONADOS
@@ -423,7 +468,6 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
               const SizedBox(height: 20), // Espacio antes del botón principal
             ],
 
-
             // BOTONES PRINCIPALES
             ElevatedButton(
               style: AppButtonStyles.primaryButton,
@@ -450,7 +494,7 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
                 Expanded(
                     child: ElevatedButton(
                       style: AppButtonStyles.secondaryButton,
-                      onPressed: _confirmProducts,
+                      onPressed: _confirmOrder,
                       child: const Text("Pedido"),
                     ),
                 ),

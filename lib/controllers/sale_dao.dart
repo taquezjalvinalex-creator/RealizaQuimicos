@@ -4,13 +4,12 @@ import '../database/database.dart';
 import '../models/item_model.dart';
 import '../models/sale_model.dart';
 import 'package:intl/intl.dart';
-
-import '../utils/session_manager.dart'; //Formato de fecha
+import '../utils/session_manager.dart';
 
 class SaleDao {
   final dbHelper = DBRealezaQuimicos.instance;
 
-  // Obtener todos las ventas
+  // Obtener todas las ventas
   Future<List<ProductModel>> getSales() async {
     final db = await dbHelper.database;
     final result = await db.query('sales');

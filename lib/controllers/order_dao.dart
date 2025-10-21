@@ -1,13 +1,68 @@
+import 'package:proyecto_uno/controllers/visit_dao.dart';
 import 'package:proyecto_uno/models/order_model.dart';
 import '../database/database.dart';
+import '../models/item_model.dart';
+import '../utils/session_manager.dart';
+import 'package:intl/intl.dart';
 
 class OrderDao {
   final dbHelper = DBRealezaQuimicos.instance;
 
   // Insertar pedido
-  Future<int> insertOrder(Map<String, dynamic> order) async {
+  Future<int> insertOrder({
+    required int clientId,
+    required int totalQuantity,
+    required double totalPrice,
+    required double? totalSurcharge,
+    required List<ItemModel> items,
+  }) async {
+
     final db = await dbHelper.database;
-    return await db.insert('orders', order);
+    final String dateToday = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+
+    // 1. REGISTRAR LA VISITA DEL CLIENTE
+    await VisitDao().registrarVisita(
+      clientId: clientId,
+      status: 3,
+      observations: 'Se registró un pedido',
+    );
+
+    // Obtener el vendedor
+    final userId = await SessionManager.getUserId();
+    final List<Map<String, dynamic>> sellerLogged = await db.query(
+      'sellers',
+      where: 'user_id = ? ',
+      whereArgs: [userId],
+    );
+    int sellerId = sellerLogged.first['seller_id'] as int;
+
+    // 2. REGISTRAR EL PEDIDO
+    int orderId = await db.insert('orders', {
+      'client_id': clientId,
+      'seller_id': sellerId,
+      'order_date': dateToday,
+      'total_price': totalPrice,
+      'total_surcharge': totalSurcharge,
+      'status': 'PENDIENTE',
+      'total_quantity': totalQuantity,
+      'observations': '',
+    });
+
+    // 3.Agregar productos a la venta
+    for (var item in items) {
+      // Insertar el detalle de la venta
+      await db.insert('order_items', {
+        'order_id': orderId,
+        'product_id': item.productId,
+        'quantity': item.quantity,
+        'status': 'PENDIENTE',
+        'unit_price': item.unitPrice,
+        'surcharge': item.surcharge,
+        'total_price': item.totalPrice,
+        'total_surcharge': item.totalSurcharge,
+      });
+    }
+    return orderId;
   }
 
   // Buscar un pedido por id
@@ -56,7 +111,9 @@ class OrderDao {
        ord.status,
        strftime('%d/%m/%Y', ord.order_date) AS order_date,
        ord.total_quantity,
-       ord.total_price
+       ord.total_price,
+       ord.total_surcharge,
+       ord.observations
       FROM orders ord
       JOIN clients cl ON cl.client_id = ord.client_id
       JOIN sellers sl ON sl.seller_id = ord.seller_id

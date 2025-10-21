@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_uno/models/order_model.dart';
 import 'package:proyecto_uno/controllers/order_dao.dart';
-//import 'package:proyecto_uno/screens/bottom_sheets/add_product_bottomsheet.dart';
-//import 'package:proyecto_uno/screens/bottom_sheets/add_visit_bottomsheet.dart';
 import 'package:proyecto_uno/style/styles.dart';
 import '../controllers/route_dao.dart';
-//import 'bottom_sheets/add_payment_bottomsheet.dart';
-//import '../widgets/app_drawer.dart';
 
 class OrderPage extends StatefulWidget {
   final int routeId;
@@ -28,13 +24,13 @@ class _OrderPageState extends State<OrderPage> {
     _loadOrders(); // Carga los orderes al iniciar el widget
   }
 
-  // ✅ 1. CREA UNA FUNCIÓN PARA CARGAR/RECARGAR
+  // 1. CREA UNA FUNCIÓN PARA CARGAR/RECARGAR
   void _loadOrders() {
     int routeId = widget.routeId;
     setState(() {
       if (routeId == 0) {
         _ordersFuture = orderDao.getAllOrders();
-        _routeNameFuture = Future.value("PEDIDOS");
+        _routeNameFuture = Future.value("Pedidos");
       } else {
         _routeNameFuture = routeDao.getRouteName(routeId);
         _ordersFuture = orderDao.getOrderByRoute(routeId);
@@ -84,7 +80,7 @@ class _OrderPageState extends State<OrderPage> {
       appBar: AppBar(
         // ESPERAMOS EL RESULTADO DE LA CONSULTA PARA OBTENER EL NOMBRE DE LA RUTA
         title: FutureBuilder<String>(
-          future: _routeNameFuture, // 1. Pasa tu Future aquí
+          future: _routeNameFuture, // TITULO DE LA PANTALLA
           builder: (context, snapshot) {
             // 2. Comprueba el estado del Future
             if (snapshot.connectionState == ConnectionState.waiting) {
