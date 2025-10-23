@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:proyecto_uno/models/client_model.dart';
+import '../controllers/client_dao.dart';
+import '../controllers/route_dao.dart';
+import '../routes/app_routes.dart';
 import '../style/styles.dart';
 
 class ClientFormPage extends StatefulWidget {
-  final ClientModel? client; // Si no es null, es edición
-  const ClientFormPage({super.key, this.client});
+  //final ClientModel? client; // Si no es null, es edición
+  final int? routeId;
+
+  const ClientFormPage({
+    super.key,
+    //this.client,
+    this.routeId
+  });
 
   @override
   State<ClientFormPage> createState() => _ClientFormPageState();
@@ -13,6 +22,9 @@ class ClientFormPage extends StatefulWidget {
 
 class _ClientFormPageState extends State<ClientFormPage> {
   final _formKey = GlobalKey<FormState>();
+  final _clientDao = ClientDao();
+  final _routeDao = RouteDao();
+
 
   // Controladores
   final TextEditingController _firstNameController = TextEditingController();
@@ -28,33 +40,31 @@ class _ClientFormPageState extends State<ClientFormPage> {
   bool _isActive = true;
   String? _homePhotoUrl;
 
-  // Simulamos rutas disponibles (en una app real vendrían de la BD)
-  final List<Map<String, dynamic>> _routes = [
-    {'id': 1, 'name': 'Ruta Norte'},
-    {'id': 2, 'name': 'Ruta Sur'},
-    {'id': 3, 'name': 'Ruta Centro'},
-  ];
+  late Future<List<Map<String, dynamic>>> _routes;
 
   @override
   void initState() {
     super.initState();
+    _selectedRouteId = widget.routeId;
+    _routes = _routeDao.getRoutes();
+    /*
     if (widget.client != null) {
       _loadClientData(widget.client!);
-    }
+    }*/
   }
-
+/*
   void _loadClientData(ClientModel client) {
     _firstNameController.text = client.firstName;
-    _lastNameController.text = client.lastName;
-    _documentType = 'client.documentType';
-    _documentNumberController.text = client.lastName;
+    _lastNameController.text = client.lastName ?? '';
+    _documentType = client.documentType ?? '';
+    _documentNumberController.text = client.lastName ?? '';
     _phoneController.text = client.phone;
     _addressController.text = client.address;
     _selectedRouteId = client.routeId;
-    _referenceDescriptionController.text = client.referenceDescription;
+    _referenceDescriptionController.text = client.referenceDescription ?? '';
     _homePhotoUrl = client.lastName;
     _isActive = client.status as bool;
-  }
+  }*/
 
   Future<void> _takePhoto() async {
     // Aquí iría la lógica para abrir la cámara (ej. usando image_picker)
@@ -63,22 +73,76 @@ class _ClientFormPageState extends State<ClientFormPage> {
     });
   }
 
-  void _saveClient() {
+  // Confirma el pago
+  void _confirmForm() {
     if (_formKey.currentState!.validate()) {
-      final newClient = {
-        'first_name': _firstNameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
-        'document_type': _documentType,
-        'document_number': _documentNumberController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'address': _addressController.text.trim(),
-        'route_id': _selectedRouteId,
-        'reference_description': _referenceDescriptionController.text.trim(),
-        'home_photo_url': _homePhotoUrl,
-        'status': _isActive ? 1 : 0,
-      };
+    // Dialogo de confirmación
+      showDialog(
+        context: context,
+        builder: (dialogContext) =>
+            AlertDialog(
+              title: const Text('Guardar cliente'),
+              content: Text(
+                '¿Deseas registrar a ${_firstNameController.text.trim()}',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (dialogContext.mounted) {
+                      await _saveClient();
+                    }
+                    if (mounted) {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.clients,
+                        arguments: widget.routeId,
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Datos guardados.'),
+                          backgroundColor: Colors
+                              .green, // Un color más apropiado para éxito
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            ),
+      );
+    }
+  }
 
-      Navigator.pop(context, newClient); // Retornar datos al cerrar
+  Future<void> _saveClient() async{
+
+    if (_formKey.currentState!.validate()) {
+
+      final clientModel = ClientModel(
+        clientId: null,
+        routeId: _selectedRouteId!,
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        documentType: _documentType,
+        documentNumber: _documentNumberController.text.trim(),
+        address: _addressController.text.trim(),
+        phone: _phoneController.text.trim(),
+        homePhoto: null, //_homePhotoUrl!,
+        referenceDescription: _referenceDescriptionController.text.trim(),
+        lastVisits: '',
+        status: _isActive ? 1 : 0,
+        credits: 0.0,
+        payments: 0.0,
+        latitude: 0.0,
+        longitude: 0.0,
+      );
+
+      _clientDao.insertClient(clientModel);
+
     }
   }
 
@@ -182,20 +246,42 @@ class _ClientFormPageState extends State<ClientFormPage> {
 
               const SizedBox(height: 10),
               // Ruta
-              DropdownButtonFormField<int>(
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _routes, // El Future que contiene la lista de rutas
+            builder: (context, snapshot) {
+              // Muestra un indicador de carga mientras los datos no estén listos
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              // Muestra un mensaje si hubo un error al cargar las rutas
+              if (snapshot.hasError) {
+                return Text('Error al cargar rutas: ${snapshot.error}');
+              }
+
+              // Si no hay datos, muestra un mensaje (caso poco probable si siempre hay rutas)
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Text('No hay rutas disponibles.');
+              }
+
+              // Cuando los datos están listos, construye el DropdownButtonFormField
+              final routesList = snapshot.data!;
+              return DropdownButtonFormField<int>(
                 value: _selectedRouteId,
                 decoration: const InputDecoration(labelText: "Ruta"),
-                items: _routes.map((route) {
+                items: routesList.map((route) {
                   return DropdownMenuItem<int>(
-                    value: route['id'], // El valor que se guarda
+                    // ✅ Corrige el acceso a los datos del mapa
+                    value: route['route_id'] as int, // El valor que se guarda
                     child: Text(route['name'] as String), // Lo que ve el usuario
                   );
                 }).toList(),
                 onChanged: (value) => setState(() => _selectedRouteId = value),
                 validator: (value) =>
                 value == null ? "Seleccione una ruta" : null,
-              ),
-
+              );
+            },
+          ),
               const SizedBox(height: 20),
               const Text("Detalles adicionales",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -247,7 +333,7 @@ class _ClientFormPageState extends State<ClientFormPage> {
                     child: const Text("Cancelar"),
                   ),
                   ElevatedButton(
-                    onPressed: _saveClient,
+                    onPressed: _confirmForm,
                     child: const Text("Guardar cliente"),
                   ),
                 ],

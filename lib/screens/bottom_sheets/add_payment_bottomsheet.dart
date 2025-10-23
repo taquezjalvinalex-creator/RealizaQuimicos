@@ -79,12 +79,10 @@ class _AddPaymentBottomSheetState extends State<AddPaymentBottomSheet> {
     // Formatea la fecha y hora actual
     final String formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-
     final double amount = double.parse(_amountController.text);
     final String observation = _observationController.text;
     final int paymentMethod = _selectedOption;
     final int clientId = widget.clientId;
-    final int routeId = widget.routeId;
     final double clientCredits = widget.clientCredits;
 
     // Crea el objeto PaymentModel
@@ -105,7 +103,7 @@ class _AddPaymentBottomSheetState extends State<AddPaymentBottomSheet> {
     await _paymentDao.insertPayment(
         payment: newPayment,
         clientId: clientId,
-        routeId: routeId
+        //routeId: routeId
     );
   }
 

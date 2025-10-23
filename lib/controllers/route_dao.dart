@@ -14,7 +14,10 @@ class RouteDao {
   // Obtener todas las rutas
   Future<List<Map<String, dynamic>>> getRoutes() async {
     final db = await dbHelper.database;
-    return await db.query('routes');
+    return await db.query('routes',
+      where: 'status=1',
+      orderBy: 'name',
+    );
   }
 
   // Buscar un ruta por id
@@ -125,7 +128,7 @@ class RouteDao {
         WHERE us.user_id = ?
         ORDER BY r.route_day;
     ''', [userId]); //
-    print(result);
+    //print(result);
     return result.map((row) => RouteModel.fromMap(row)).toList();
   }
 

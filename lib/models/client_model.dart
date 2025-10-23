@@ -1,18 +1,20 @@
 class ClientModel {
-  final int clientId;
+  final int? clientId;
   final int routeId;
   final String firstName;
-  final String lastName;
-  final String documentType;
-  final String documentNumber;
+  final String? lastName;
+  final String? documentType;
+  final String? documentNumber;
   final String address;
   final String phone;
-  final String homePhoto;
-  final String referenceDescription;
+  final String? homePhoto;
+  final String? referenceDescription;
   final String lastVisits;
   final int status;
-  final double credits;
-  final double payments;
+  final double? credits;
+  final double? payments;
+  final double? latitude;
+  final double? longitude;
 
   ClientModel({
     required this.clientId,
@@ -29,6 +31,8 @@ class ClientModel {
     required this.status,
     required this.credits, //Suma de balance
     required this.payments,
+    required this.latitude,
+    required this.longitude,
   });
 
   // Convertir desde Map (resultado de SQLite) a ClientModel
@@ -48,6 +52,8 @@ class ClientModel {
       lastVisits: (map['last_visit'] ?? ''),
       credits: (map['credits'] ?? 0).toDouble(),
       payments: (map['payments'] ?? 0).toDouble(),
+      latitude: (map['latitude'] ?? 0).toDouble(),
+      longitude: (map['longitude'] ?? 0).toDouble(),
     );
   }
 }

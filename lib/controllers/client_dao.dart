@@ -1,16 +1,41 @@
+import 'package:proyecto_uno/controllers/visit_dao.dart';
 import 'package:proyecto_uno/models/client_model.dart';
 import '../database/database.dart';
 import '../models/client_detail_model.dart';
 import '../models/payment_model.dart';
 import '../models/visit_model.dart';
+import 'package:intl/intl.dart'; //Formato de fecha
 
 class ClientDao {
   final dbHelper = DBRealezaQuimicos.instance;
 
   // Insertar cliente
-  Future<int> insertClient(Map<String, dynamic> client) async {
+  Future<int> insertClient(ClientModel client) async {
+    final String dateToday = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
     final db = await dbHelper.database;
-    return await db.insert('clients', client);
+    int clientId = await db.insert('clients', {
+      'route_id': client.routeId,
+      'first_name': client.firstName.toUpperCase(),
+      'last_name': client.lastName?.toUpperCase(),
+      'document_type': client.documentType,
+      'document_number': client.documentNumber,
+      'address': client.address,
+      'phone': client.phone,
+      'home_photo_url': 'client.homePhoto',
+      'reference_description': client.referenceDescription,
+      'status': client.status,
+      'created_at': dateToday,
+      'latitude': 0.0,
+      'longitude': 0.0,
+    });
+
+    VisitDao().registrarVisita(
+      clientId: clientId,
+      status: 2,
+      observations: 'Se registró como cliente nuevo',
+    );
+
+    return clientId;
   }
 
   // Obtener todas los clientes
@@ -53,8 +78,6 @@ class ClientDao {
 
   // Consulta el resumen de clientes por ruta
   Future<List<ClientModel>> getClientByRoute(int routeId) async {
-    //final userId = await SessionManager.getUserId();
-    getPayments();
     final db = await dbHelper.database;
     // Consulta personalizada para obtener el resumen de rutas
     final result = await db.rawQuery('''
@@ -196,53 +219,5 @@ class ClientDao {
 
     // 4️⃣ Combinar los datos
     return client.copyWith(payments: payments, visits: visits);
-  }
-
-
-  // Obtener todos los pagos
-  Future<void> getPayments() async {
-    getPaymentsData();
-    getPaymentsData2();
-    final db = await dbHelper.database;
-    final pagos = await db.query('payments ORDER BY payment_id DESC');
-    //final pagos = await db.query('payments');
-    print('>>>>>>>>>>>>>>>>> PAGOS <<<<<<<<<<<<<<<<<<');
-    print(pagos);
-    print('>>>>>>>>>>>>>>>>> END PAGOS <<<<<<<<<<<<<<<<<<');
-  }
-
-  // Obtener todos los pagos
-  Future<void> getPaymentsData() async {
-    final db = await dbHelper.database;
-    final pagos = await db.rawQuery('''
-        SELECT c.client_id,
-        SUM(p.amount_paid) AS pagos_credito_hoy
-        FROM payments p
-        JOIN credits c ON p.credit_id = c.credit_id
-        WHERE p.credit_id IS NOT NULL
-        AND date(p.payment_date) = date('now','localtime')
-        GROUP BY c.client_id
-        ''');
-    //final pagos = await db.rawQuery('payments');
-    print('>>>>>>>>>>>>>>>>> Date <<<<<<<<<<<<<<<<<<');
-    print(pagos);
-    print('>>>>>>>>>>>>>>>>> END Date <<<<<<<<<<<<<<<<<<');
-  }
-
-  Future<void> getPaymentsData2() async {
-    final db = await dbHelper.database;
-    final pagos = await db.rawQuery('''
-        SELECT
-        c.client_id,
-        SUM(p.amount_paid) AS pagos_credito_hoy
-        FROM payments p
-        JOIN credits c ON p.credit_id = c.credit_id
-        WHERE p.credit_id IS NOT NULL
-        GROUP BY c.client_id
-        ''');
-    //final pagos = await db.query('payments');
-    print('>>>>>>>>>>>>>>>>> Date 2<<<<<<<<<<<<<<<<<<');
-    print(pagos);
-    print('>>>>>>>>>>>>>>>>> END Date 2 <<<<<<<<<<<<<<<<<<');
   }
 }

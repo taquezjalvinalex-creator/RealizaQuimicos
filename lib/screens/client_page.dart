@@ -8,8 +8,6 @@ import '../controllers/route_dao.dart';
 import '../routes/app_routes.dart';
 import 'bottom_sheets/add_payment_bottomsheet.dart';
 
-//import '../widgets/app_drawer.dart';
-
 class ClientPage extends StatefulWidget {
   final int routeId;
   const ClientPage(
@@ -25,8 +23,6 @@ class _ClientPageState extends State<ClientPage> {
   final routeDao = RouteDao();
   final TextEditingController _searchController = TextEditingController();
   late Future <String> _routeNameFuture;
-  //late Future<List<ClientModel>> _clientsFuture;//revisar si es necesario
-  //late Future <String> _statusFuture;
   List<ClientModel> _allClients = []; // Guarda la lista original de clientes
   List<ClientModel> _filteredClients = []; // Guarda la lista filtrada a mostrar
 
@@ -45,7 +41,7 @@ class _ClientPageState extends State<ClientPage> {
     _searchController.dispose();
     super.dispose();
   }
-  // ✅ 1. CREA UNA FUNCIÓN PARA CARGAR/RECARGAR
+  // 1. CREA UNA FUNCIÓN PARA CARGAR/RECARGAR
   void _loadInitialData() async {
     setState(() {
       _isLoading = true;
@@ -82,7 +78,8 @@ class _ClientPageState extends State<ClientPage> {
       }).toList();
     });
   }
-    String _getStatusText(int status) {
+
+  String _getStatusText(int status) {
     switch (status) {
       case 1:
         return "No estaba";
@@ -268,9 +265,7 @@ class _ClientPageState extends State<ClientPage> {
                                       ),
                                       builder: (BuildContext context) {
                                         return AddVisitBottomSheet(
-                                            clientId: client.clientId,
-                                            //sellerId: client.clientId,
-                                            //routeId: client.routeId
+                                            clientId: client.clientId ?? 0,
                                         );
                                       },
                                     );
@@ -315,9 +310,9 @@ class _ClientPageState extends State<ClientPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Abono: \$${client.payments.toStringAsFixed(0)}",
+                                Text("Abono: \$${(client.payments ?? 0).toStringAsFixed(0)}",
                                     style:  AppTextStyles.boldSuccess),
-                                Text("Saldo: \$${client.credits.toStringAsFixed(0)}",
+                                Text("Saldo: \$${(client.credits ?? 0).toStringAsFixed(0)}",
                                     style:  AppTextStyles.boldInfo),
                               ],
                             ),
@@ -340,10 +335,10 @@ class _ClientPageState extends State<ClientPage> {
                                         String clientName = "${client.firstName} ${client.lastName}";
                                         // Parametros del BottomSheet
                                         return AddPaymentBottomSheet(
-                                            clientId: client.clientId,
+                                            clientId: client.clientId ?? 0,
                                             routeId: client.routeId,
                                             clientName: clientName,
-                                            clientCredits: client.credits, //Valor de saldo
+                                            clientCredits: client.credits ?? 0, //Valor de saldo
                                         );
 
                                       },
@@ -368,7 +363,7 @@ class _ClientPageState extends State<ClientPage> {
                                       builder: (BuildContext context) {
                                         String clientName = "${client.firstName} ${client.lastName}";
                                         return AddProductBottomSheet(
-                                            clientId: client.clientId,
+                                            clientId: client.clientId ?? 0,
                                             clientName: clientName,
                                         );
                                       },
@@ -404,7 +399,7 @@ class _ClientPageState extends State<ClientPage> {
           Navigator.pushNamed(
             context,
             AppRoutes.clientForm,
-            arguments: null,
+            arguments: widget.routeId,
           );
         },
         //child: const Icon(Icons.add, size: 32,),

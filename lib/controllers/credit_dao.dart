@@ -2,7 +2,7 @@ import 'package:proyecto_uno/models/sale_model.dart';
 
 import '../database/database.dart';
 import '../models/credit_model.dart';
-import 'package:intl/intl.dart'; //Formato de fecha
+//import 'package:intl/intl.dart'; //Formato de fecha
 
 class CreditDao {
   final dbHelper = DBRealezaQuimicos.instance;
@@ -22,7 +22,7 @@ class CreditDao {
 
     final db = await dbHelper.database;
     // Fecha actual en formato compatible con SQLite
-    final String dateToday = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+    //final String dateToday = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
     final today = DateTime.now();
     //final today = DateTime.now().toIso8601String();//DateFormat('yyyy-MM-dd').format(today);
 

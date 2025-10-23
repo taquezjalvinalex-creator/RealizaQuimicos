@@ -56,7 +56,7 @@ class DBRealezaQuimicos {
           route_id INTEGER PRIMARY KEY AUTOINCREMENT,
           municipio_id INTEGER NOT NULL,
           name TEXT NOT NULL,
-          route_day INTEGER DEFAULT '0',  -- d�as 1.lunes, 2.martes etc
+          route_day INTEGER DEFAULT '0',
           status INTEGER DEFAULT '1', -- ESTADOS 0=INACTIVO 1=ACTIVO
           created_at TEXT DEFAULT (datetime('now','localtime')),
           updated_at TEXT DEFAULT (datetime('now','localtime')),
@@ -92,12 +92,12 @@ class DBRealezaQuimicos {
           first_name TEXT NOT NULL,
           last_name TEXT NOT NULL,
           document_type TEXT CHECK(document_type IN ('CC','TI','CE','NIT')),
-          document_number TEXT UNIQUE,
+          document_number TEXT NULL,
           phone TEXT,
           address TEXT NOT NULL,
           latitude REAL,
           longitude REAL,
-          home_photo_url TEXT,
+          home_photo_url TEXT NULL,
           reference_description TEXT,
           status INTEGER DEFAULT '1', -- ESTADOS 0=INACTIVO 1=ACTIVO
           created_at TEXT DEFAULT (datetime('now','localtime')),

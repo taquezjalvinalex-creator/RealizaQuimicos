@@ -6,6 +6,7 @@ import 'package:proyecto_uno/models/product_model.dart';
 import 'package:proyecto_uno/models/sale_model.dart';
 import '../../controllers/credit_dao.dart';
 import '../../controllers/order_dao.dart';
+import '../../routes/app_routes.dart';
 import '../../style/styles.dart';
 
 class AddProductBottomSheet extends StatefulWidget {
@@ -38,7 +39,7 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
     super.initState();
 
     _loadProducts();
-    // ✅ 2. Añade un listener para reaccionar a los cambios de texto
+    // 2. Añade un listener para reaccionar a los cambios de texto
     _searchController.addListener(_filterProducts);
   }
   // CARGAR LISTA DE PROUCTOS
@@ -106,8 +107,16 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
     if (_selectedProducts.isEmpty) {
       return;
     }
-    // Aquí puedes navegar o devolver los productos seleccionados
-    Navigator.pop(context, _selectedProducts);
+    Navigator.pushNamed(
+        context,
+        AppRoutes.payment,
+        arguments: {
+          'clientId': widget.clientId,
+          'clientName': widget.clientName,
+          'quantities': _quantities,
+          'selectedProducts': _selectedProducts,
+        },
+    );
   }
 
   // Confirma el credito
@@ -266,7 +275,6 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
     }).toList(); // Convierte el resultado de .map en una List<ItemModel>
   }
 
-
   // Función para calcular el valor total del carrito
   double _calculateTotal() {
     double total = 0.0;
@@ -283,7 +291,6 @@ class _AddProductBottomSheetState extends State<AddProductBottomSheet> {
     _searchController.dispose();
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {

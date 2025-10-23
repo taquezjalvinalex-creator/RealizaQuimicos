@@ -14,8 +14,6 @@ class _CreditInfo {
   });
 }
 
-
-
 // Clase para manejar las operaciones de pago
 class PaymentDao {
   final dbHelper = DBRealezaQuimicos.instance;
@@ -23,7 +21,7 @@ class PaymentDao {
   Future<void> insertPayment({
     required PaymentModel payment,
     required int clientId,
-    required int routeId
+    //required int routeId
   }) async {
     final db = await dbHelper.database;
     await db.transaction((txn) async {
